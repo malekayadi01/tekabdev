@@ -143,7 +143,7 @@
    methods: {
      async login() {
        try {
-         const response = await axios.post('https://delicate-sea-ba7d.malekaydi.workers.dev/', {
+        const response = await axios.post(process.env.VUE_APP_API_URL, {
            username: this.username,
            password: this.password
          }, {

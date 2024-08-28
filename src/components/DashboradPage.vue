@@ -79,16 +79,112 @@
   </template>  
   
   <script>
-  import { ref, onMounted } from 'vue';
-  import axios from 'axios';
-  import SideBar from './SideBar.vue';
-  
-  export default {
-    components: {
-      SideBar,
-    },
-    setup() {
-      const newTask = ref({
+import { ref, onMounted } from 'vue';
+import axios from 'axios';
+import SideBar from './SideBar.vue';
+
+export default {
+  components: {
+    SideBar,
+  },
+  setup() {
+    const newTask = ref({
+      id: null,
+      title: '',
+      description: '',
+      deadline: '',
+      priority: 'low',
+      status: 'todo',
+      assignedTo: ''
+    });
+    const tasks = ref([]);
+    const showTaskForm = ref(false);
+    const isEditing = ref(false);
+    const statuses = ['todo', 'in-progress', 'to-deliver', 'to-test', 'done'];
+    const statusLabels = {
+      'todo': 'À faire',
+      'in-progress': 'En cours',
+      'to-deliver': 'À livrer',
+      'to-test': 'À tester',
+      'done': 'Terminé'
+    };
+    const usersOptions = ref([]);
+    let draggedTask = ref(null);
+
+    const fetchTasks = async () => {
+      try {
+        const response = await axios.get(process.env.VUE_APP_TASKS_API_URL);
+        tasks.value = response.data;
+      } catch (err) {
+        console.error('Failed to fetch tasks:', err);
+      }
+    };
+
+    const fetchUsers = async () => {
+      try {
+        const response = await axios.get(process.env.VUE_APP_USERNAMES_API_URL);
+        usersOptions.value = response.data;
+      } catch (err) {
+        console.error('Failed to fetch users:', err);
+      }
+    };
+
+    const handleSubmit = async () => {
+      if (isEditing.value) {
+        await updateTask(newTask.value);
+      } else {
+        await createTask(newTask.value);
+      }
+      resetForm();
+    };
+
+    const createTask = async (task) => {
+      try {
+        await axios.post(process.env.VUE_APP_TASKS_API_URL, task);
+        await fetchTasks();
+      } catch (err) {
+        console.error('Failed to create task:', err);
+      }
+    };
+
+    const updateTask = async (task) => {
+      try {
+        await axios.put(`${process.env.VUE_APP_TASKS_API_URL}/${task.id}`, task);
+        await fetchTasks();
+      } catch (err) {
+        console.error('Failed to update task:', err);
+      }
+    };
+
+    const deleteTask = async (id) => {
+      try {
+        await axios.delete(`${process.env.VUE_APP_TASKS_API_URL}/${id}`);
+        await fetchTasks();
+      } catch (err) {
+        console.error('Failed to delete task:', err);
+      }
+    };
+
+    const dragTask = (task) => {
+      draggedTask.value = task;
+    };
+
+    const dropTask = async (event, status) => {
+      if (draggedTask.value) {
+        draggedTask.value.status = status;
+        await updateTask(draggedTask.value);
+        draggedTask.value = null;
+      }
+    };
+
+    const editTask = (task) => {
+      newTask.value = { ...task }; 
+      isEditing.value = true; 
+      showTaskForm.value = true;
+    };
+
+    const resetForm = () => {
+      newTask.value = {
         id: null,
         title: '',
         description: '',
@@ -96,149 +192,54 @@
         priority: 'low',
         status: 'todo',
         assignedTo: ''
-      });
-      const tasks = ref([]);
-      const showTaskForm = ref(false);
-      const isEditing = ref(false);
-      const statuses = ['todo', 'in-progress', 'to-deliver', 'to-test', 'done'];
-      const statusLabels = {
-        'todo': 'À faire',
-        'in-progress': 'En cours',
-        'to-deliver': 'À livrer',
-        'to-test': 'À tester',
-        'done': 'Terminé'
       };
-      const usersOptions = ref([]);
-      let draggedTask = ref(null);
-  
-      const fetchTasks = async () => {
-        try {
-          const response = await axios.get('https://blue-hall-2517.malekaydi.workers.dev/tasks');
-          tasks.value = response.data;
-        } catch (err) {
-          console.error('Failed to fetch tasks:', err);
-        }
-      };
-  
-      const fetchUsers = async () => {
-        try {
-          const response = await axios.get('https://restless-night-e697.malekaydi.workers.dev/usersname');
-          usersOptions.value = response.data;
-        } catch (err) {
-          console.error('Failed to fetch users:', err);
-        }
-      };
-  
-      const handleSubmit = async () => {
-        if (isEditing.value) {
-          await updateTask(newTask.value);
-        } else {
-          await createTask(newTask.value);
-        }
-        resetForm();
-      };
-  
-      const createTask = async (task) => {
-        try {
-          await axios.post('https://blue-hall-2517.malekaydi.workers.dev/tasks', task);
-          await fetchTasks();
-        } catch (err) {
-          console.error('Failed to create task:', err);
-        }
-      };
-  
-      const updateTask = async (task) => {
-        try {
-          await axios.put(`https://blue-hall-2517.malekaydi.workers.dev/tasks/${task.id}`, task);
-          await fetchTasks();
-        } catch (err) {
-          console.error('Failed to update task:', err);
-        }
-      };
-  
-      const deleteTask = async (id) => {
-        try {
-          await axios.delete(`https://blue-hall-2517.malekaydi.workers.dev/tasks/${id}`);
-          await fetchTasks();
-        } catch (err) {
-          console.error('Failed to delete task:', err);
-        }
-      };
-  
-      const dragTask = (task) => {
-        draggedTask.value = task;
-      };
-  
-      const dropTask = async (event, status) => {
-        if (draggedTask.value) {
-          draggedTask.value.status = status;
-          await updateTask(draggedTask.value);
-          draggedTask.value = null;
-        }
-      };
-  
-      const editTask = (task) => {
-        newTask.value = { ...task }; 
-        isEditing.value = true; 
-        showTaskForm.value = true;
-      };
-  
-      const resetForm = () => {
-        newTask.value = {
-          id: null,
-          title: '',
-          description: '',
-          deadline: '',
-          priority: 'low',
-          status: 'todo',
-          assignedTo: ''
-        };
-        isEditing.value = false;
-        showTaskForm.value = false;
-      };
-  
-      const getCardVariant = (task) => {
-        if (task.status === 'done') return 'success';
-        switch (task.priority) {
-          case 'low':
-            return 'primary';
-          case 'medium':
-            return 'warning';
-          case 'high':
-            return 'danger';
-          default:
-            return 'secondary';
-        }
-      };
-  
-      onMounted(async () => {
-        const token = localStorage.getItem('authToken');
-        if (!token) {
-          this.$router.push('/');
-        } else {
-          await fetchTasks();
-          await fetchUsers();
-        }
-      });
-  
-      return {
-        newTask,
-        tasks,
-        showTaskForm,
-        isEditing,
-        statuses,
-        statusLabels,
-        usersOptions,
-        dragTask,
-        dropTask,
-        editTask,
-        deleteTask,
-        handleSubmit,
-        getCardVariant,
-        resetForm
-      };
-    }
-  };
+      isEditing.value = false;
+      showTaskForm.value = false;
+    };
+
+    const getCardVariant = (task) => {
+      if (task.status === 'done') return 'success';
+      switch (task.priority) {
+        case 'low':
+          return 'primary';
+        case 'medium':
+          return 'warning';
+        case 'high':
+          return 'danger';
+        default:
+          return 'secondary';
+      }
+    };
+
+    onMounted(async () => {
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        this.$router.push('/');
+      } else {
+        await fetchTasks();
+        await fetchUsers();
+      }
+    });
+
+    return {
+      newTask,
+      tasks,
+      showTaskForm,
+      isEditing,
+      statuses,
+      statusLabels,
+      usersOptions,
+      dragTask,
+      dropTask,
+      editTask,
+      deleteTask,
+      handleSubmit,
+      getCardVariant,
+      resetForm
+    };
+  }
+};
+
   </script>
   
   <style>

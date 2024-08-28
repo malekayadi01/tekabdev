@@ -46,7 +46,7 @@
   
       const fetchUsers = async () => {
         try {
-          const response = await axios.get('https://restless-night-e697.malekaydi.workers.dev/users');
+          const response = await axios.get(process.env.VUE_APP_USERS_API_URL);
           users.value = response.data;
         } catch (err) {
           console.error('Failed to fetch users:', err);
@@ -55,7 +55,7 @@
   
       const createUser = async () => {
         try {
-          await axios.post('https://restless-night-e697.malekaydi.workers.dev/users', newUser.value);
+          await axios.post(process.env.VUE_APP_USERS_API_URL, newUser.value);
           await fetchUsers();
           resetForm();
           showUserForm.value = false;
@@ -66,7 +66,7 @@
   
       const updateUser = async () => {
         try {
-          await axios.put(`https://restless-night-e697.malekaydi.workers.dev/users/${currentUserId.value}`, newUser.value);
+          await axios.put(`${process.env.VUE_APP_USERS_API_URL}/${currentUserId.value}`, newUser.value);
           await fetchUsers();
           resetForm();
           showUserForm.value = false;
@@ -84,7 +84,7 @@
   
       const deleteUser = async (id) => {
         try {
-          await axios.delete(`https://restless-night-e697.malekaydi.workers.dev/users/${id}`);
+          await axios.delete(`${process.env.VUE_APP_USERS_API_URL}/${id}`);
           await fetchUsers();
         } catch (err) {
           console.error('Failed to delete user:', err);
